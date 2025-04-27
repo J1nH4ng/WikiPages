@@ -3,13 +3,39 @@
 # Description: server inspection script
 # Author: J1nH4ng<j1nh4ng@icloud.com>
 # Date: 2025-04-27
-# Version: V0.0.1.20250427_develop
+# Version: V0.0.2.20250427_develop
 # Copyright 2025 © Team 4r3al. All rights reserved.
+
+function net_check() {
+  # TODO: with self-defined backend server
+  # like curl https://api.4r3al.team/net-check?token=xxx&ip=xxx
+  :
+}
 
 function check_dependencies() {
   : << EOF
-  - [ ] lspci
+  - [x] lspci
+  - [x] curl
+  - [x] dmidecode
+  - [x] bc
 EOF
+
+  local pag_map_redhat;
+
+  declare -A pag_map_redhat=(
+    ["lspci"]="pciutils"
+    ["curl"]="curl"
+    ["dmidecode"]="dmidecode"
+    ["bc"]="bc"
+  );
+
+  local cmd;
+
+  for cmd in "${!pag_map_redhat[@]}"; do
+    if ! command -v "$cmd" &> /dev/null; then
+      yum install "${pag_map_redhat[$cmd]}" -y
+    fi
+  done
 }
 
 function get_os_info() {
@@ -21,9 +47,15 @@ function get_os_info() {
   - [x] CPU 线程数
   - [x] 内存大小
   - [ ] 磁盘信息
+    - [ ] 磁盘名称
+    - [ ] 磁盘大小
+    - [ ] 磁盘类型
   - [x] 网卡信息
+    - [x] 网卡名称
+    - [x] 网卡 MAC 地址
+    - [x] 网卡 IP 地址
   - [x] 操作系统版本
-  - [ ] 内核版本
+  - [x] 内核版本
 EOF
 
   # show system-product
@@ -58,6 +90,10 @@ EOF
   local OS_RELEASE;
   OS_RELEASE=$(grep PRETTY_NAME /etc/os-release | cut -d '"' -f 2);
 
+  # show linux kernel version
+  local LINUX_KERNEL_VERSION;
+  LINUX_KERNEL_VERSION=$(uname -r);
+
   # show network interface name
   local NETWORK_INTERFACE_NAME;
   NETWORK_INTERFACE_NAME=$(lspci -k | grep "Ethernet controller" -m 1 -A 3 | awk -F: '/Ethernet controller/ {print $3}');
@@ -65,16 +101,26 @@ EOF
   # show network interface subsystem
   local NETWORK_INTERFACE_SUBSYSTEM;
   NETWORK_INTERFACE_SUBSYSTEM=$(lspci -k | grep "Ethernet controller" -m 1 -A 3 | awk -F: '/Subsystem/ {print $2}');
+
+  # show network interface
+  local NETWORK_INTERFACE_IP;
+  NETWORK_INTERFACE_IP=$(hostname -i)
+
+  # show network interface MAC
+  local NETWORK_INTERFACE_NAME;
+  local NETWORK_INTERFACE_MAC;
+  NETWORK_INTERFACE_NAME=$(ip -o addr show | grep "${NETWORK_INTERFACE_IP}" | awk 'print $2')
+  NETWORK_INTERFACE_MAC=$(ip link show "${NETWORK_INTERFACE_NAME}" | awk '/link\/ether/ {print $2}')
 }
 
-function test_get_os_info() {
-  get_os_info
+function get_usage_info() {
+  :
 }
 
 function main() {
   export LANG="en_US.UTF-8";
-  # unit test
-  test_get_os_info
+  local timestamp;
+  timestamp=$(date +"%Y-%m-%d%H:%M:%S");
 }
 
 main "$@"

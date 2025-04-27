@@ -60,61 +60,71 @@ function get_os_info() {
 EOF
 
   # show system-product
-  local SYSTEM_PRODUCT;
+  export SYSTEM_PRODUCT;
   SYSTEM_PRODUCT=$(dmidecode -s system-product-name);
 
   # show CPU architecture
-  local CPU_ARCHITECTURE;
+  export CPU_ARCHITECTURE;
   CPU_ARCHITECTURE=$(uname -m);
 
   # show CPU name
-  local CPU_NANE;
-  CPU_NANE=$(awk -F: '/model name/ {print $2}' /proc/cpuinfo | uniq);
+  export CPU_NANE;
+  CPU_NANE=$(awk -F ':[ \t]+' '/model name/ {print $2}' /proc/cpuinfo | uniq);
 
   # show physical CPU members
-  local PHYSICAL_CPU_MEMBERS;
-  PHYSICAL_CPU_MEMBERS=$(awk -F: '/physical id/ {print $2}' /proc/cpuinfo | sort | uniq | wc -l);
+  export PHYSICAL_CPU_MEMBERS;
+  PHYSICAL_CPU_MEMBERS=$(awk -F ':[ \t]+' '/physical id/ {print $2}' /proc/cpuinfo | sort | uniq | wc -l);
+
+  # TODO: show CPU siblings
+  export SIBILINGS;
+  SIBILINGS=$(awk -F ':[ \t]+' '/siblings/ {print $2}' /proc/cpuinfo | uniq)
 
   # show CPU cores
-  local CPU_CORES;
-  CPU_CORES=$(awk -F: '/cpu cores/ {print $2}' /proc/cpuinfo | uniq);
+  export SIGNAL_CPU_PHYSICAL_CORES;
+  export CPU_LOGICAL_CORES;
+  SIGNAL_CPU_PHYSICAL_CORES=$(awk -F ':[ \t]+' '/cpu cores/ {print $2}' /proc/cpuinfo | uniq);
+  CPU_LOGICAL_CORES=$((SIBILINGS*PHYSICAL_CPU_MEMBERS));
+
+  # TODO: judge hyper-threading
+  # export HYPER_THREADING_ENABLED;
 
   # show PROCESSOR
-  local PROCESSOR;
-  PROCESSOR=$(awk -F: '/processor/ {print $2}' /proc/cpuinfo | uniq | wc -l);
+  export PROCESSOR;
+  PROCESSOR=$(awk -F ':[ \t]+' '/processor/ {print $2}' /proc/cpuinfo | uniq | wc -l);
+
 
   # show memory size
-  local MEMORY_SIZE;
-  MEMORY_SIZE=$(awk -F: '/MemTotal/ {print $2}' /proc/meminfo | awk '{print int($1/1048576 + 0.999999999), "GB"}');
+  export MEMORY_SIZE;
+  MEMORY_SIZE=$(awk -F ':[ \t]+' '/MemTotal/ {print $2}' /proc/meminfo | awk '{print int($1/1048576 + 0.999999999), "GB"}');
 
   # show os-release
-  local OS_RELEASE;
+  export OS_RELEASE;
   OS_RELEASE=$(grep PRETTY_NAME /etc/os-release | cut -d '"' -f 2);
 
   # show linux kernel version
-  local LINUX_KERNEL_VERSION;
+  export LINUX_KERNEL_VERSION;
   LINUX_KERNEL_VERSION=$(uname -r);
 
   # show network interface name
-  local NETWORK_INTERFACE_NAME;
-  NETWORK_INTERFACE_NAME=$(lspci -k | grep "Ethernet controller" -m 1 -A 3 | awk -F: '/Ethernet controller/ {print $3}');
+  export NETWORK_INTERFACE_NAME;
+  NETWORK_INTERFACE_NAME=$(lspci -k | grep "Ethernet controller" -m 1 -A 3 | awk -F ':[ \t]+' '/Ethernet controller/ {print $2}');
 
   # show network interface subsystem
-  local NETWORK_INTERFACE_SUBSYSTEM;
-  NETWORK_INTERFACE_SUBSYSTEM=$(lspci -k | grep "Ethernet controller" -m 1 -A 3 | awk -F: '/Subsystem/ {print $2}');
+  export NETWORK_INTERFACE_SUBSYSTEM;
+  NETWORK_INTERFACE_SUBSYSTEM=$(lspci -k | grep "Ethernet controller" -m 1 -A 3 | awk -F ':[ \t]+' '/Subsystem/ {print $2}');
 
   # show network interface
-  local NETWORK_INTERFACE_IP;
-  NETWORK_INTERFACE_IP=$(hostname -i)
+  export NETWORK_INTERFACE_IP;
+  NETWORK_INTERFACE_IP=$(hostname -I | awk '{print $1}')
 
   # show network interface MAC
-  local NETWORK_INTERFACE_NICKNAME;
-  local NETWORK_INTERFACE_MAC;
-  NETWORK_INTERFACE_NICKNAME=$(ip -o addr show | grep "${NETWORK_INTERFACE_IP}" | awk 'print $2')
-  NETWORK_INTERFACE_MAC=$(ip link show "${NETWORK_INTERFACE_NAME}" | awk '/link\/ether/ {print $2}')
+  export NETWORK_INTERFACE_NICKNAME;
+  export NETWORK_INTERFACE_MAC;
+  NETWORK_INTERFACE_NICKNAME=$(ip -o addr show | grep "${NETWORK_INTERFACE_IP}" | awk '{print $2}')
+  NETWORK_INTERFACE_MAC=$(ip link show "${NETWORK_INTERFACE_NICKNAME}" | awk '/link\/ether/ {print $2}')
 
   local DISK_INFO_ARRAY=();
-  local DISK_INFO_ARRAY_WITH_TYPE=();
+  export DISK_INFO_ARRAY_WITH_TYPE=();
   local i;
   # chmod +x or bash
   mapfile -t DISK_INFO_ARRAY < <(lsblk -n -d -o NAME,SIZE,TYPE | grep "disk");
@@ -133,23 +143,6 @@ EOF
     fi
     DISK_INFO_ARRAY_WITH_TYPE+=("${DISK_NAME} ${DISK_SIZE} ${DISK_TYPE}");
   done
-
-  # export variables
-  export SYSTEM_PRODUCT
-  export CPU_ARCHITECTURE
-  export CPU_NANE
-  export PHYSICAL_CPU_MEMBERS
-  export CPU_CORES
-  export PROCESSOR
-  export MEMORY_SIZE
-  export OS_RELEASE
-  export LINUX_KERNEL_VERSION
-  export NETWORK_INTERFACE_NAME
-  export NETWORK_INTERFACE_SUBSYSTEM
-  export NETWORK_INTERFACE_IP
-  export NETWORK_INTERFACE_NICKNAME
-  export NETWORK_INTERFACE_MAC
-  export DISK_INFO_ARRAY_WITH_TYPE;
 }
 
 function test_get_os_info() {
@@ -160,8 +153,9 @@ function test_get_os_info() {
   echo "服务器制造商： ${SYSTEM_PRODUCT}"
   echo "CPU架构： ${CPU_ARCHITECTURE}"
   echo "CPU型号： ${CPU_NANE}"
-  echo "CPU 物理核心数： ${PHYSICAL_CPU_MEMBERS}"
-  echo "CPU 逻辑核心数： ${CPU_CORES}"
+  echo "CPU 插槽核心数： ${PHYSICAL_CPU_MEMBERS}"
+  echo "单 CPU 物理核心数： ${SIGNAL_CPU_PHYSICAL_CORES}"
+  echo "CPU 逻辑核心数： ${CPU_LOGICAL_CORES}"
   echo "CPU 线程数： ${PROCESSOR}"
   echo "内存大小： ${MEMORY_SIZE}"
   echo "操作系统版本： ${OS_RELEASE}"

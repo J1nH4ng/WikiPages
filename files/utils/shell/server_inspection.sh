@@ -18,6 +18,7 @@ function check_dependencies() {
   - [x] curl
   - [x] dmidecode
   - [x] bc
+  - [x] lshw
 EOF
 
   local pag_map_redhat;
@@ -46,10 +47,10 @@ function get_os_info() {
   - [x] CPU 内核数
   - [x] CPU 线程数
   - [x] 内存大小
-  - [ ] 磁盘信息
-    - [ ] 磁盘名称
-    - [ ] 磁盘大小
-    - [ ] 磁盘类型
+  - [x] 磁盘信息
+    - [x] 磁盘名称
+    - [x] 磁盘大小
+    - [x] 磁盘类型
   - [x] 网卡信息
     - [x] 网卡名称
     - [x] 网卡 MAC 地址
@@ -107,10 +108,74 @@ EOF
   NETWORK_INTERFACE_IP=$(hostname -i)
 
   # show network interface MAC
-  local NETWORK_INTERFACE_NAME;
+  local NETWORK_INTERFACE_NICKNAME;
   local NETWORK_INTERFACE_MAC;
-  NETWORK_INTERFACE_NAME=$(ip -o addr show | grep "${NETWORK_INTERFACE_IP}" | awk 'print $2')
+  NETWORK_INTERFACE_NICKNAME=$(ip -o addr show | grep "${NETWORK_INTERFACE_IP}" | awk 'print $2')
   NETWORK_INTERFACE_MAC=$(ip link show "${NETWORK_INTERFACE_NAME}" | awk '/link\/ether/ {print $2}')
+
+  local DISK_INFO_ARRAY=();
+  local DISK_INFO_ARRAY_WITH_TYPE=();
+  local i;
+  # chmod +x or bash
+  mapfile -t DISK_INFO_ARRAY < <(lsblk -n -d -o NAME,SIZE,TYPE | grep "disk");
+  for i in "${DISK_INFO_ARRAY[@]}"; do
+    local DISK_NAME
+    local DISK_SIZE
+    local DISK_TYPE_CODE
+    local DISK_TYPE
+    DISK_NAME=$(echo "$i" | awk '{print $1}');
+    DISK_SIZE=$(echo "$i" | awk '{print $2}');
+    DISK_TYPE_CODE=$( < /sys/block/"${DISK_NAME}"/queue/rotational)
+    if [ "$DISK_TYPE_CODE" -eq 0 ]; then
+      DISK_TYPE="SSD";
+    else
+      DISK_TYPE="HDD";
+    fi
+    DISK_INFO_ARRAY_WITH_TYPE+=("${DISK_NAME} ${DISK_SIZE} ${DISK_TYPE}");
+  done
+
+  # export variables
+  export SYSTEM_PRODUCT
+  export CPU_ARCHITECTURE
+  export CPU_NANE
+  export PHYSICAL_CPU_MEMBERS
+  export CPU_CORES
+  export PROCESSOR
+  export MEMORY_SIZE
+  export OS_RELEASE
+  export LINUX_KERNEL_VERSION
+  export NETWORK_INTERFACE_NAME
+  export NETWORK_INTERFACE_SUBSYSTEM
+  export NETWORK_INTERFACE_IP
+  export NETWORK_INTERFACE_NICKNAME
+  export NETWORK_INTERFACE_MAC
+  export DISK_INFO_ARRAY_WITH_TYPE;
+}
+
+function test_get_os_info() {
+  get_os_info
+
+  local i
+
+  echo "服务器制造商： ${SYSTEM_PRODUCT}"
+  echo "CPU架构： ${CPU_ARCHITECTURE}"
+  echo "CPU型号： ${CPU_NANE}"
+  echo "CPU 物理核心数： ${PHYSICAL_CPU_MEMBERS}"
+  echo "CPU 逻辑核心数： ${CPU_CORES}"
+  echo "CPU 线程数： ${PROCESSOR}"
+  echo "内存大小： ${MEMORY_SIZE}"
+  echo "操作系统版本： ${OS_RELEASE}"
+  echo "内核版本： ${LINUX_KERNEL_VERSION}"
+  echo "网卡制造商： ${NETWORK_INTERFACE_SUBSYSTEM}"
+  echo "网卡型号： ${NETWORK_INTERFACE_NAME}"
+  echo "网卡名称： ${NETWORK_INTERFACE_NICKNAME}"
+  echo "网卡MAC地址： ${NETWORK_INTERFACE_MAC}"
+  echo "网卡IP地址： ${NETWORK_INTERFACE_IP}"
+  for i in "${DISK_INFO_ARRAY_WITH_TYPE[@]}"; do
+    echo "磁盘名称： $(echo "$i" | awk '{print $1}')"
+    echo "磁盘大小： $(echo "$i" | awk '{print $2}')"
+    echo "磁盘类型： $(echo "$i" | awk '{print $3}')"
+  done
 }
 
 function get_usage_info() {
@@ -121,6 +186,9 @@ function main() {
   export LANG="en_US.UTF-8";
   local timestamp;
   timestamp=$(date +"%Y-%m-%d%H:%M:%S");
+
+  # unit test
+  test_get_os_info;
 }
 
 main "$@"

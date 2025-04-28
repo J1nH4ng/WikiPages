@@ -18,10 +18,7 @@ function check_dependencies() {
   - [x] curl
   - [x] dmidecode
   - [x] bc
-  - [x] lshw
 EOF
-
-  local pag_map_redhat;
 
   declare -A pag_map_redhat=(
     ["lspci"]="pciutils"
@@ -30,13 +27,19 @@ EOF
     ["bc"]="bc"
   );
 
-  local cmd;
+  local cmd=();
 
-  for cmd in "${!pag_map_redhat[@]}"; do
+  cmd=("lspci" "curl" "dmidecode" "bc");
+
+  for cmd in "${cmd[@]}"; do
     if ! command -v "$cmd" &> /dev/null; then
       yum install "${pag_map_redhat[$cmd]}" -y
     fi
   done
+}
+
+function test_check_dependencies() {
+  check_dependencies;
 }
 
 function get_os_info() {
@@ -188,7 +191,13 @@ function main() {
   timestamp=$(date +"%Y-%m-%d%H:%M:%S");
 
   # unit test
-  test_get_os_info;
+  # Succeed:
+  #  - test_get_os_info
+  #  - test_check_dependencies
+
+
+  # test_get_os_info;
+  # test_check_dependencies;
 }
 
 main "$@"

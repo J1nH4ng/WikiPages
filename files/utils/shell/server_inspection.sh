@@ -75,19 +75,23 @@ EOF
   export PHYSICAL_CPU_MEMBERS;
   PHYSICAL_CPU_MEMBERS=$(awk -F ':[ \t]+' '/physical id/ {print $2}' /proc/cpuinfo | sort | uniq | wc -l);
 
-  # TODO: show CPU siblings
-  export SIBILINGS;
+  local SIBILINGS;
   SIBILINGS=$(awk -F ':[ \t]+' '/siblings/ {print $2}' /proc/cpuinfo | uniq)
 
   # show CPU cores
   export SIGNAL_CPU_PHYSICAL_CORES;
   export CPU_LOGICAL_CORES;
+  export CPU_PHYSICAL_CORES;
   SIGNAL_CPU_PHYSICAL_CORES=$(awk -F ':[ \t]+' '/cpu cores/ {print $2}' /proc/cpuinfo | uniq);
   CPU_LOGICAL_CORES=$((SIBILINGS*PHYSICAL_CPU_MEMBERS));
+  CPU_PHYSICAL_CORES=$((SIGNAL_CPU_PHYSICAL_CORES*PHYSICAL_CPU_MEMBERS));
 
-  # TODO: judge hyper-threading
-  # export HYPER_THREADING_ENABLED;
-
+  export HYPER_THREADING_ENABLED;
+  if [[ $((SIGNAL_CPU_PHYSICAL_CORES*PHYSICAL_CPU_MEMBERS)) -eq $CPU_LOGICAL_CORES ]]; then
+    HYPER_THREADING_ENABLED="false";
+  else
+    HYPER_THREADING_ENABLED="true";
+  fi
   # show PROCESSOR
   export PROCESSOR;
   PROCESSOR=$(awk -F ':[ \t]+' '/processor/ {print $2}' /proc/cpuinfo | uniq | wc -l);
@@ -150,25 +154,24 @@ function test_get_os_info() {
 
   local i
 
-  echo "服务器制造商： ${SYSTEM_PRODUCT}"
-  echo "CPU架构： ${CPU_ARCHITECTURE}"
-  echo "CPU型号： ${CPU_NANE}"
-  echo "CPU 插槽核心数： ${PHYSICAL_CPU_MEMBERS}"
+  echo "服务器制造商：      ${SYSTEM_PRODUCT}"
   echo "单 CPU 物理核心数： ${SIGNAL_CPU_PHYSICAL_CORES}"
-  echo "CPU 逻辑核心数： ${CPU_LOGICAL_CORES}"
-  echo "CPU 线程数： ${PROCESSOR}"
-  echo "内存大小： ${MEMORY_SIZE}"
-  echo "操作系统版本： ${OS_RELEASE}"
-  echo "内核版本： ${LINUX_KERNEL_VERSION}"
-  echo "网卡制造商： ${NETWORK_INTERFACE_SUBSYSTEM}"
-  echo "网卡型号： ${NETWORK_INTERFACE_NAME}"
-  echo "网卡名称： ${NETWORK_INTERFACE_NICKNAME}"
-  echo "网卡MAC地址： ${NETWORK_INTERFACE_MAC}"
-  echo "网卡IP地址： ${NETWORK_INTERFACE_IP}"
+  echo "CPU 物理核心数：    ${CPU_PHYSICAL_CORES}"
+  echo "CPU 逻辑核心数：    ${CPU_LOGICAL_CORES}"
+  echo "CPU 线程数：        ${PROCESSOR}"
+  echo "是否开启超线程：    ${HYPER_THREADING_ENABLED}"
+  echo "内存大小：          ${MEMORY_SIZE}"
+  echo "操作系统版本：      ${OS_RELEASE}"
+  echo "内核版本：          ${LINUX_KERNEL_VERSION}"
+  echo "网卡制造商：        ${NETWORK_INTERFACE_SUBSYSTEM}"
+  echo "网卡型号：          ${NETWORK_INTERFACE_NAME}"
+  echo "网卡名称：          ${NETWORK_INTERFACE_NICKNAME}"
+  echo "网卡 MAC 地址：     ${NETWORK_INTERFACE_MAC}"
+  echo "网卡 IP 地址：      ${NETWORK_INTERFACE_IP}"
   for i in "${DISK_INFO_ARRAY_WITH_TYPE[@]}"; do
-    echo "磁盘名称： $(echo "$i" | awk '{print $1}')"
-    echo "磁盘大小： $(echo "$i" | awk '{print $2}')"
-    echo "磁盘类型： $(echo "$i" | awk '{print $3}')"
+    echo "磁盘名称：          $(echo "$i" | awk '{print $1}')"
+    echo "磁盘大小：          $(echo "$i" | awk '{print $2}')"
+    echo "磁盘类型：          $(echo "$i" | awk '{print $3}')"
   done
 }
 

@@ -156,6 +156,7 @@ function test_get_os_info() {
 
   echo "服务器制造商：      ${SYSTEM_PRODUCT}"
   echo "单 CPU 物理核心数： ${SIGNAL_CPU_PHYSICAL_CORES}"
+  echo "CPU 架构：        ${CPU_ARCHITECTURE}"
   echo "CPU 物理核心数：    ${CPU_PHYSICAL_CORES}"
   echo "CPU 逻辑核心数：    ${CPU_LOGICAL_CORES}"
   echo "CPU 线程数：        ${PROCESSOR}"

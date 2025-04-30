@@ -3,7 +3,7 @@
 # Description: server inspection script
 # Author: J1nH4ng<j1nh4ng@icloud.com>
 # Date: 2025-04-27
-# Version: V0.0.2.20250427_develop
+# Version: V0.0.3.20250428_develop
 # Copyright 2025 © Team 4r3al. All rights reserved.
 
 function net_check() {
@@ -18,6 +18,7 @@ function check_dependencies() {
   - [x] curl
   - [x] dmidecode
   - [x] bc
+  - [x] mpstat
 EOF
 
   declare -A pag_map_redhat=(
@@ -25,11 +26,12 @@ EOF
     ["curl"]="curl"
     ["dmidecode"]="dmidecode"
     ["bc"]="bc"
+    ["mpstat"]="sysstat"
   );
 
   local cmd=();
 
-  cmd=("lspci" "curl" "dmidecode" "bc");
+  cmd=("lspci" "curl" "dmidecode" "bc" "mpstat");
 
   for cmd in "${cmd[@]}"; do
     if ! command -v "$cmd" &> /dev/null; then
@@ -102,7 +104,8 @@ EOF
 
   # show memory size
   export MEMORY_SIZE;
-  MEMORY_SIZE=$(awk -F ':[ \t]+' '/MemTotal/ {print $2}' /proc/meminfo | awk '{print int($1/1048576 + 0.999999999), "GB"}');
+  # MEMORY_SIZE=$(awk -F ':[ \t]+' '/MemTotal/ {print $2}' /proc/meminfo | awk '{print int($1/1048576 + 0.999999999), "GB"}');
+  MEMORY_SIZE=$(lsmem | awk -F ':[ \t]+' '/Total online memory/ {print $2}');
 
   # show os-release
   export OS_RELEASE;
@@ -181,9 +184,88 @@ function test_get_os_info() {
   done
 }
 
-function get_usage_info() {
-  :
+function security_check() {
+  : << EOF
+  - [ ] 防火墙状态
+  - [ ] SSH 限制登录检测
+EOF
 }
+
+function kernel_config_info() {
+  : << EOF
+  - [ ] 最大文件句柄数
+  - [ ] TIME_WAI 超时
+  - [ ] 内存交换倾向
+  - [ ] SYN 重试次数
+  - [ ] 最大连接数
+  - [ ] TCP 快速回收
+EOF
+}
+
+function get_usage_info() {
+  : << EOF
+  - [x] 启动时间
+  - [x] 运行时间
+  - [x] CPU 使用率
+  - [ ] 系统负载
+    - [ ] 1 分钟负载
+    - [ ] 5 分钟负载
+    - [ ] 15 分钟负载
+  - [x] 内存使用率
+  - [ ] 磁盘使用率
+  - [ ] inode 使用率
+EOF
+  export START_TIME;
+  START_TIME=$(uptime -s);
+
+  export RUNNING_TIME;
+  RUNNING_TIME=$(uptime -p);
+
+  export CPU_USAGE_INFO;
+  CPU_USAGE_INFO=$(mpstat 1 1 | awk '/Average:/ {print 100 - $NF "%"}')
+
+
+  export MEM_USAGE_INFO;
+  export FREE_MEM_INFO;
+  export TOTAL_MEM_INFO;
+  FREE_MEM_INFO=$(awk '/MemAvailable/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo)
+  TOTAL_MEM_INFO=$(awk '/MemTotal/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo)
+  MEM_USAGE_INFO=$(awk '/MemTotal/ {total=$2} /MemAvailable/ {avail=$2} END {printf "%.1f%%\n", (total-avail)/total*100}' /proc/meminfo)
+
+  export SWAP_MEM_INFO;
+  export FREE_SWAP_INFO;
+  export TOTAL_SWAP_INFO;
+  FREE_SWAP_INFO=$(awk '/SwapFree/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo)
+  TOTAL_SWAP_INFO=$(awk '/SwapTotal/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo)
+  SWAP_MEM_INFO=$(awk '/SwapTotal/ {total=$2} /SwapFree/ {avail=$2} END {printf "%.1f%%\n", (total-avail)/total*100}' /proc/meminfo)
+}
+
+function test_get_usage_info() {
+  echo "CPU 使用率：${CPU_USAGE_INFO}"
+  echo "总内存大小：${TOTAL_MEM_INFO}"
+  echo "空闲内存大小：${FREE_MEM_INFO}"
+  echo "内存使用率：${MEM_USAGE_INFO}"
+  echo "交换内存大小：${TOTAL_SWAP_INFO}"
+  echo "空闲交换内存大小：${FREE_SWAP_INFO}"
+  echo "交换内存使用率：${SWAP_MEM_INFO}"
+}
+
+function get_service_info() {
+  : << EOF
+  - [ ] CPU 占用前 10 进程
+  - [ ] 内存占用前 10 进程
+  - [ ] 定时任务列表
+  - [ ] Systemd 服务列表
+EOF
+}
+
+function server_port_info() {
+  : << EOF
+  - [ ] 端口占用情况
+  - [ ] TCP 连接状态
+EOF
+}
+
 
 function main() {
   export LANG="en_US.UTF-8";
@@ -198,6 +280,7 @@ function main() {
 
   # test_get_os_info;
   # test_check_dependencies;
+  test_get_usage_info;
 }
 
 main "$@"

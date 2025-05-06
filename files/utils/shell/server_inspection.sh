@@ -139,13 +139,13 @@ EOF
   # chmod +x or bash
   mapfile -t DISK_INFO_ARRAY < <(lsblk -n -d -o NAME,SIZE,TYPE | grep "disk");
   for i in "${DISK_INFO_ARRAY[@]}"; do
-    local DISK_NAME
-    local DISK_SIZE
-    local DISK_TYPE_CODE
-    local DISK_TYPE
+    local DISK_NAME;
+    local DISK_SIZE;
+    local DISK_TYPE_CODE;
+    local DISK_TYPE;
     DISK_NAME=$(echo "$i" | awk '{print $1}');
     DISK_SIZE=$(echo "$i" | awk '{print $2}');
-    DISK_TYPE_CODE=$( < /sys/block/"${DISK_NAME}"/queue/rotational)
+    DISK_TYPE_CODE=$( < /sys/block/"${DISK_NAME}"/queue/rotational);
     if [ "$DISK_TYPE_CODE" -eq 0 ]; then
       DISK_TYPE="SSD";
     else
@@ -158,29 +158,29 @@ EOF
 function test_get_os_info() {
   get_os_info
 
-  local i
+  local i;
 
-  echo "服务器制造商：      ${SYSTEM_PRODUCT}"
-  echo "CPU 型号：          ${CPU_NANE}"
-  echo "CPU 架构：          ${CPU_ARCHITECTURE}"
-  echo "CPU 物理插槽数：    ${PHYSICAL_CPU_MEMBERS}"
-  echo "单 CPU 物理核心数： ${SIGNAL_CPU_PHYSICAL_CORES}"
-  echo "CPU 物理核心数：    ${CPU_PHYSICAL_CORES}"
-  echo "CPU 逻辑核心数：    ${CPU_LOGICAL_CORES}"
-  echo "CPU 线程数：        ${PROCESSOR}"
-  echo "是否开启超线程：    ${HYPER_THREADING_ENABLED}"
-  echo "内存大小：          ${MEMORY_SIZE}"
-  echo "操作系统版本：      ${OS_RELEASE}"
-  echo "内核版本：          ${LINUX_KERNEL_VERSION}"
-  echo "网卡制造商：        ${NETWORK_INTERFACE_SUBSYSTEM}"
-  echo "网卡型号：          ${NETWORK_INTERFACE_NAME}"
-  echo "网卡名称：          ${NETWORK_INTERFACE_NICKNAME}"
-  echo "网卡 MAC 地址：     ${NETWORK_INTERFACE_MAC}"
-  echo "网卡 IP 地址：      ${NETWORK_INTERFACE_IP}"
+  echo "服务器制造商：      ${SYSTEM_PRODUCT}";
+  echo "CPU 型号：          ${CPU_NANE}";
+  echo "CPU 架构：          ${CPU_ARCHITECTURE}";
+  echo "CPU 物理插槽数：    ${PHYSICAL_CPU_MEMBERS}";
+  echo "单 CPU 物理核心数： ${SIGNAL_CPU_PHYSICAL_CORES}";
+  echo "CPU 物理核心数：    ${CPU_PHYSICAL_CORES}";
+  echo "CPU 逻辑核心数：    ${CPU_LOGICAL_CORES}";
+  echo "CPU 线程数：        ${PROCESSOR}";
+  echo "是否开启超线程：    ${HYPER_THREADING_ENABLED}";
+  echo "内存大小：          ${MEMORY_SIZE}";
+  echo "操作系统版本：      ${OS_RELEASE}";
+  echo "内核版本：          ${LINUX_KERNEL_VERSION}";
+  echo "网卡制造商：        ${NETWORK_INTERFACE_SUBSYSTEM}";
+  echo "网卡型号：          ${NETWORK_INTERFACE_NAME}";
+  echo "网卡名称：          ${NETWORK_INTERFACE_NICKNAME}";
+  echo "网卡 MAC 地址：     ${NETWORK_INTERFACE_MAC}";
+  echo "网卡 IP 地址：      ${NETWORK_INTERFACE_IP}";
   for i in "${DISK_INFO_ARRAY_WITH_TYPE[@]}"; do
-    echo "磁盘名称：          $(echo "$i" | awk '{print $1}')"
-    echo "磁盘大小：          $(echo "$i" | awk '{print $2}')"
-    echo "磁盘类型：          $(echo "$i" | awk '{print $3}')"
+    echo "磁盘名称：          $(echo "$i" | awk '{print $1}')";
+    echo "磁盘大小：          $(echo "$i" | awk '{print $2}')";
+    echo "磁盘类型：          $(echo "$i" | awk '{print $3}')";
   done
 }
 
@@ -207,10 +207,10 @@ function get_usage_info() {
   - [x] 启动时间
   - [x] 运行时间
   - [x] CPU 使用率
-  - [ ] 系统负载
-    - [ ] 1 分钟负载
-    - [ ] 5 分钟负载
-    - [ ] 15 分钟负载
+  - [x] 系统负载
+    - [x] 1 分钟负载
+    - [x] 5 分钟负载
+    - [x] 15 分钟负载
   - [x] 内存使用率
   - [ ] 磁盘使用率
   - [ ] inode 使用率
@@ -222,32 +222,45 @@ EOF
   RUNNING_TIME=$(uptime -p);
 
   export CPU_USAGE_INFO;
-  CPU_USAGE_INFO=$(mpstat 1 1 | awk '/Average:/ {print 100 - $NF "%"}')
+  CPU_USAGE_INFO=$(mpstat 1 1 | awk '/Average:/ {print 100 - $NF "%"}');
 
 
   export MEM_USAGE_INFO;
   export FREE_MEM_INFO;
   export TOTAL_MEM_INFO;
-  FREE_MEM_INFO=$(awk '/MemAvailable/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo)
-  TOTAL_MEM_INFO=$(awk '/MemTotal/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo)
-  MEM_USAGE_INFO=$(awk '/MemTotal/ {total=$2} /MemAvailable/ {avail=$2} END {printf "%.1f%%\n", (total-avail)/total*100}' /proc/meminfo)
+  FREE_MEM_INFO=$(awk '/MemAvailable/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo);
+  TOTAL_MEM_INFO=$(awk '/MemTotal/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo);
+  MEM_USAGE_INFO=$(awk '/MemTotal/ {total=$2} /MemAvailable/ {avail=$2} END {printf "%.1f%%\n", (total-avail)/total*100}' /proc/meminfo);
 
   export SWAP_MEM_INFO;
   export FREE_SWAP_INFO;
   export TOTAL_SWAP_INFO;
-  FREE_SWAP_INFO=$(awk '/SwapFree/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo)
-  TOTAL_SWAP_INFO=$(awk '/SwapTotal/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo)
-  SWAP_MEM_INFO=$(awk '/SwapTotal/ {total=$2} /SwapFree/ {avail=$2} END {printf "%.1f%%\n", (total-avail)/total*100}' /proc/meminfo)
+  FREE_SWAP_INFO=$(awk '/SwapFree/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo);
+  TOTAL_SWAP_INFO=$(awk '/SwapTotal/ {printf "%.1f GB\n", $2/1048576}' /proc/meminfo);
+  SWAP_MEM_INFO=$(awk '/SwapTotal/ {total=$2} /SwapFree/ {avail=$2} END {printf "%.1f%%\n", (total-avail)/total*100}' /proc/meminfo);
+
+  export SYS_LOAD_IN_1_MIN;
+  export SYS_LOAD_IN_5_MIN;
+  export SYS_LOAD_IN_15_MIN;
+  SYS_LOAD_IN_1_MIN=$(awk '{print $1}' /proc/loadavg);
+  SYS_LOAD_IN_5_MIN=$(awk '{print $2}' /proc/loadavg);
+  SYS_LOAD_IN_15_MIN=$(awk '{print $3}' /proc/loadavg);
+
 }
 
 function test_get_usage_info() {
-  echo "CPU 使用率：${CPU_USAGE_INFO}"
-  echo "总内存大小：${TOTAL_MEM_INFO}"
-  echo "空闲内存大小：${FREE_MEM_INFO}"
-  echo "内存使用率：${MEM_USAGE_INFO}"
-  echo "交换内存大小：${TOTAL_SWAP_INFO}"
-  echo "空闲交换内存大小：${FREE_SWAP_INFO}"
-  echo "交换内存使用率：${SWAP_MEM_INFO}"
+  echo "启动时间：${START_TIME}";
+  echo "运行时间：${RUNNING_TIME}";
+  echo "系统负载（1 分钟）：${SYS_LOAD_IN_1_MIN}";
+  echo "系统负载（5 分钟）：${SYS_LOAD_IN_5_MIN}";
+  echo "系统负载（15 分钟）：${SYS_LOAD_IN_15_MIN}";
+  echo "CPU 使用率：${CPU_USAGE_INFO}";
+  echo "总内存大小：${TOTAL_MEM_INFO}";
+  echo "空闲内存大小：${FREE_MEM_INFO}";
+  echo "内存使用率：${MEM_USAGE_INFO}";
+  echo "交换内存大小：${TOTAL_SWAP_INFO}";
+  echo "空闲交换内存大小：${FREE_SWAP_INFO}";
+  echo "交换内存使用率：${SWAP_MEM_INFO}";
 }
 
 function get_service_info() {

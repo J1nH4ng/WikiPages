@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #
 # Description: server inspection script
 # Author: J1nH4ng<j1nh4ng@icloud.com>

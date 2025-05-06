@@ -1,33 +1,42 @@
 #!/bin/bash
+set -euo pipefail
 #
 # Description: file sync script
 # Author: J1nH4ng<j1nh4ng@icloud.com>
 # Date: 2025-01-14
-# Version: V1.0.1.20250115_release
+# Version: V1.0.2.20250506_release_security
 # Copyright 2025 © Team 4r3al. All rights reserved.
 
-function check_application() {
-  if command -v rsync &> /dev/null; then
-    echo "Info: rsync 已安装"
-  else
-    echo "Error: rsync 未安装, rsync 将会被安装"
-    yum install -y rsync
-  fi
+function check_dependencies() {
+  : << EOF
+  - [x] md5sum
+  - [x] rsync
+EOF
 
-  if command -v md5sum &> /dev/null; then
-    echo "Info: md5sum 已安装"
-  else
-    echo "Error: md5sum 未安装, md5sum 将会被安装"
-    yum install -y coreutils
-  fi
+  declare -A pag_map_redhat=(
+    ["md5sum"]="coreutils"
+    ["rsync"]="rsync"
+  );
+
+  local cmd=();
+
+  cmd=("md5sum" "rsync");
+
+  for cmd in "${cmd[@]}"; do
+    if ! command -v "$cmd" &> /dev/null; then
+      echo "Error: ${cmd} 未安装, ${pag_map_redhat[$cmd]} 将会被安装"
+      yum install "${pag_map_redhat[$cmd]}" -y
+    fi
+  done
 }
 
+
 function check_remote_dir_hash() {
-  local remote_user=$1
-  local remote_host=$2
+  local remote_user=${1:-root}
+  local remote_host=${2:?need_remote_host}
   local remote_port=${3:-22}
 
-  local rsync_dir=$4
+  local rsync_dir=${4:?need_rsync_dir}
 
   local local_dir_hash
   local remote_dir_hash
@@ -52,17 +61,17 @@ function check_remote_dir_hash() {
 }
 
 function sync_files() {
-  local remote_user=$1
-  local remote_host=$2
+  local remote_user=${1:-root}
+  local remote_host=${2:?need_remote_host}
   local remote_port=${3:-22}
 
-  local rsync_dir=$4
+  local rsync_dir=${4:?need_rsync_dir}
 
   rsync -avz -e "ssh -p ${remote_port}" --delete "${rsync_dir}" "${remote_user}"@"${remote_host}":"${rsync_dir}"
 }
 
 function main() {
-  check_application
+  check_dependencies
 
   local remote_user
   local remote_host

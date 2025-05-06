@@ -213,6 +213,9 @@ function get_usage_info() {
     - [x] 15 分钟负载
   - [x] 内存使用率
   - [ ] 磁盘使用率
+    - [ ] 磁盘总容量
+    - [ ] 磁盘剩余容量
+    - [ ] 磁盘使用率
   - [ ] inode 使用率
 EOF
   export START_TIME;
@@ -246,6 +249,7 @@ EOF
   SYS_LOAD_IN_5_MIN=$(awk '{print $2}' /proc/loadavg);
   SYS_LOAD_IN_15_MIN=$(awk '{print $3}' /proc/loadavg);
 
+  # TODO: 根据 /etc/fstab 和 /etc/rc.local 文件中获取磁盘挂载点，并获取磁盘总量，剩余量，计算使用率等
 }
 
 function test_get_usage_info() {

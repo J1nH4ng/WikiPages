@@ -4,7 +4,7 @@ set -euo pipefail
 # Description: server inspection script
 # Author: J1nH4ng<j1nh4ng@icloud.com>
 # Date: 2025-04-27
-# Version: V0.0.3.20250428_develop
+# Version: V0.0.4.20250508_develop
 # Copyright 2025 © Team 4r3al. All rights reserved.
 
 function net_check() {

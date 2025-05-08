@@ -213,11 +213,11 @@ function get_usage_info() {
     - [x] 5 分钟负载
     - [x] 15 分钟负载
   - [x] 内存使用率
-  - [ ] 磁盘使用率
-    - [ ] 磁盘总容量
-    - [ ] 磁盘剩余容量
-    - [ ] 磁盘使用率
-  - [ ] inode 使用率
+  - [x] 磁盘使用率
+    - [x] 磁盘总容量
+    - [x] 磁盘剩余容量
+    - [x] 磁盘使用率
+  - [x] inode 使用率
 EOF
   export START_TIME;
   START_TIME=$(uptime -s);
@@ -250,10 +250,70 @@ EOF
   SYS_LOAD_IN_5_MIN=$(awk '{print $2}' /proc/loadavg);
   SYS_LOAD_IN_15_MIN=$(awk '{print $3}' /proc/loadavg);
 
-  # TODO: 根据 /etc/fstab 和 /etc/rc.local 文件中获取磁盘挂载点，并获取磁盘总量，剩余量，计算使用率等
+#  local point;
+#  export DISK_TOTAL_INFO;
+#  export DISK_FREE_INFO;
+#  export DISK_USAGE_INFO;
+#  export DISK_PERCENT_INFO;
+#
+#  export INODE_TOTAL_INFO;
+#  export INODE_FREE_INFO;
+#  export INODE_USAGE_INFO;
+#  export INODE_PERCENT_INFO;
+#
+#  for point in "${MOUNT_POINT_ARRAY[@]}"; do
+#    if [[ "$point" != "none" ]]; then
+#      DISK_TOTAL_INFO=$(df -h "${point}" | awk 'NR==2 {print $2}');
+#      DISK_FREE_INFO=$(df -h "${point}" | awk 'NR==2 {print $4}');
+#      DISK_USAGE_INFO=$(df -h "${point}" | awk 'NR==2 {print $3}');
+#      DISK_PERCENT_INFO=$(df -h "${point}" | awk 'NR==2 {print $5}');
+#      INODE_TOTAL_INFO=$(df -i "${point}" | awk 'NR==2 {print $2}');
+#      INODE_FREE_INFO=$(df -i "${point}" | awk 'NR==2 {print $4}');
+#      INODE_USAGE_INFO=$(df -i "${point}" | awk 'NR==2 {print $3}');
+#      INODE_PERCENT_INFO=$(df -i "${point}" | awk 'NR==2 {print $5}');
+#      echo "挂载点 ${point} 的总量为： ${DISK_TOTAL_INFO}";
+#      echo "挂载点 ${point} 的剩余量为： ${DISK_FREE_INFO}";
+#      echo "挂载点 ${point} 的使用量为： ${DISK_USAGE_INFO}";
+#      echo "挂载点 ${point} 的使用率为： ${DISK_PERCENT_INFO}";
+#      echo "挂载点 ${point} 的 inode 总量为： ${INODE_TOTAL_INFO}";
+#      echo "挂载点 ${point} 的 inode 剩余量为： ${INODE_FREE_INFO}";
+#      echo "挂载点 ${point} 的 inode 使用量为： ${INODE_USAGE_INFO}";
+#      echo "挂载点 ${point} 的 inode 使用率为： ${INODE_PERCENT_INFO}";
+#    fi
+#  done
+}
+
+function get_mount_point_info() {
+  export MOUNT_POINT_ARRAY=();
+  local MOUNT_POINT;
+  local line;
+
+  while read -r line; do
+    [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+
+    MOUNT_POINT=$(echo "$line" | awk '{print $2}')
+
+    if [[ -n "$MOUNT_POINT" ]]; then
+      MOUNT_POINT_ARRAY+=("${MOUNT_POINT}")
+    fi
+  done < /etc/fstab
 }
 
 function test_get_usage_info() {
+  get_mount_point_info;
+  get_usage_info;
+
+  local point;
+  local DISK_TOTAL_INFO;
+  local DISK_FREE_INFO;
+  local DISK_USAGE_INFO;
+  local DISK_PERCENT_INFO;
+
+  local INODE_TOTAL_INFO;
+  local INODE_FREE_INFO;
+  local INODE_USAGE_INFO;
+  local INODE_PERCENT_INFO;
+
   echo "启动时间：${START_TIME}";
   echo "运行时间：${RUNNING_TIME}";
   echo "系统负载（1 分钟）：${SYS_LOAD_IN_1_MIN}";
@@ -266,6 +326,26 @@ function test_get_usage_info() {
   echo "交换内存大小：${TOTAL_SWAP_INFO}";
   echo "空闲交换内存大小：${FREE_SWAP_INFO}";
   echo "交换内存使用率：${SWAP_MEM_INFO}";
+  for point in "${MOUNT_POINT_ARRAY[@]}"; do
+    if [[ "$point" != "none" ]]; then
+      DISK_TOTAL_INFO=$(df -h "${point}" | awk 'NR==2 {print $2}');
+      DISK_FREE_INFO=$(df -h "${point}" | awk 'NR==2 {print $4}');
+      DISK_USAGE_INFO=$(df -h "${point}" | awk 'NR==2 {print $3}');
+      DISK_PERCENT_INFO=$(df -h "${point}" | awk 'NR==2 {print $5}');
+      INODE_TOTAL_INFO=$(df -i "${point}" | awk 'NR==2 {print $2}');
+      INODE_FREE_INFO=$(df -i "${point}" | awk 'NR==2 {print $4}');
+      INODE_USAGE_INFO=$(df -i "${point}" | awk 'NR==2 {print $3}');
+      INODE_PERCENT_INFO=$(df -i "${point}" | awk 'NR==2 {print $5}');
+      echo "挂载点 ${point} 的总量为： ${DISK_TOTAL_INFO}";
+      echo "挂载点 ${point} 的剩余量为： ${DISK_FREE_INFO}";
+      echo "挂载点 ${point} 的使用量为： ${DISK_USAGE_INFO}";
+      echo "挂载点 ${point} 的使用率为： ${DISK_PERCENT_INFO}";
+      echo "挂载点 ${point} 的 inode 总量为： ${INODE_TOTAL_INFO}";
+      echo "挂载点 ${point} 的 inode 剩余量为： ${INODE_FREE_INFO}";
+      echo "挂载点 ${point} 的 inode 使用量为： ${INODE_USAGE_INFO}";
+      echo "挂载点 ${point} 的 inode 使用率为： ${INODE_PERCENT_INFO}";
+    fi
+  done
 }
 
 function get_service_info() {
@@ -290,15 +370,18 @@ function main() {
   local timestamp;
   timestamp=$(date +"%Y-%m-%d%H:%M:%S");
 
+  check_dependencies;
+
   # unit test
   # Succeed:
   #  - test_get_os_info
   #  - test_check_dependencies
+  #  - test_get_usage_info
 
 
   # test_get_os_info;
   # test_check_dependencies;
-  test_get_usage_info;
+  # test_get_usage_info;
 }
 
 main "$@"

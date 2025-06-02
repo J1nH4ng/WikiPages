@@ -1,0 +1,19 @@
+[Unit]
+Description="prometheus"
+Documentation=https://prometheus.io/
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/prometheus3.4/prometheus  --config.file=/usr/local/prometheus3.4/prometheus.yml \
+          --storage.tsdb.path=/data/prometheus \
+          --web.enable-lifecycle
+Restart=on-failure
+SuccessExitStatus=0
+LimitNOFILE=65536
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=prometheus
+
+[Install]
+WantedBy=multi-user.target

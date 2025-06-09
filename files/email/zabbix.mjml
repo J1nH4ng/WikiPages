@@ -1,0 +1,72 @@
+<mjml>
+    <mj-head>
+        <mj-title>Zabbix 告警通知</mj-title>
+        <mj-style>
+            .severity-high { color: #d9534f; font-weight: bold; }
+            .severity-average { color: #f0ad4e; font-weight: bold; }
+            .severity-low { color: #5bc0de; font-weight: bold; }
+            .severity-info { color: #5cb85c; font-weight: bold; }
+        </mj-style>
+    </mj-head>
+    <mj-body>
+        <mj-section background-color="#f5f5f5">
+            <mj-column>
+                <mj-image width="150px" src="https://www.zabbix.com/img/logo/zabbix_logo_500x131.png" alt="Zabbix Logo">
+
+                </mj-image>
+            </mj-column>
+        </mj-section>
+
+        <mj-section background-color="#ffffff">
+            <mj-column>
+                <mj-text font-size="20px" color="#333" font-weight="bold">Zabbix 告警通知</mj-text>
+                <mj-divider border-color="#e0e0e0">
+
+                </mj-divider>
+
+                <mj-text>
+                    <span class="severity-{{severity}}">[{{severity}}]</span> {{trigger.name}}
+                </mj-text>
+
+                <mj-table>
+                    <tr>
+                        <td style="padding: 5px 10px; font-weight: bold; width: 120px;">告警时间:</td>
+                        <td style="padding: 5px 10px;">{{event.date}} {{event.time}}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 5px 10px; font-weight: bold;">主机:</td>
+                        <td style="padding: 5px 10px;">{{host.name}}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 5px 10px; font-weight: bold;">严重性:</td>
+                        <td style="padding: 5px 10px;"><span class="severity-{{severity}}">{{severity}}</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 5px 10px; font-weight: bold;">当前值:</td>
+                        <td style="padding: 5px 10px;">{{item.value}}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 5px 10px; font-weight: bold;">触发器表达式:</td>
+                        <td style="padding: 5px 10px; font-family: monospace;">{{trigger.expression}}</td>
+                    </tr>
+                </mj-table>
+
+                <mj-text>
+                    <a href="{{zabbix.url}}">点击查看详情</a>
+                </mj-text>
+            </mj-column>
+        </mj-section>
+
+        <mj-section background-color="#f5f5f5">
+            <mj-column>
+                <mj-button background-color="#337ab7" href="{{acknowledge.url}}">
+                    确认告警
+                </mj-button>
+                <mj-text font-size="12px" color="#999" padding-top="20px">
+                    此邮件由 Zabbix 自动发送，请勿直接回复。<br>
+                    如需修改通知设置，请登录 Zabbix 系统配置。
+                </mj-text>
+            </mj-column>
+        </mj-section>
+    </mj-body>
+</mjml>
